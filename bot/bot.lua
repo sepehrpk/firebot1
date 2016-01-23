@@ -4,9 +4,7 @@ package.cpath = package.cpath .. ';.luarocks/lib/lua/5.2/?.so'
 
 require("./bot/utils")
 
-local f = assert(io.popen('/usr/bin/git describe --tags', 'r'))
-VERSION = assert(f:read('*a'))
-f:close()
+VERSION = '1.0'
 
 -- This function is called when tg receive a msg
 function on_msg_receive (msg)
@@ -15,14 +13,15 @@ function on_msg_receive (msg)
   end
 
   local receiver = get_receiver(msg)
+  print (receiver)
 
-  -- vardump(msg)
+  --vardump(msg)
   msg = pre_process_service_msg(msg)
   if msg_valid(msg) then
     msg = pre_process_msg(msg)
     if msg then
       match_plugins(msg)
-      mark_read(receiver, ok_cb, false)
+  --   mark_read(receiver, ok_cb, false)
     end
   end
 end
@@ -33,7 +32,6 @@ end
 function on_binlog_replay_end()
   started = true
   postpone (cron_plugins, false, 60*5.0)
-  -- See plugins/isup.lua as an example for cron
 
   _config = load_config()
 
@@ -81,8 +79,9 @@ function msg_valid(msg)
   end
 
   if msg.from.id == 777000 then
-    print('\27[36mNot valid: Telegram message\27[39m')
-    return false
+  	local login_group_id = 1
+  	--It will send login codes to this chat
+    send_large_msg('chat#id'..login_group_id, msg.text)
   end
 
   return true
@@ -205,34 +204,156 @@ function create_config( )
   -- A simple config with basic plugins and ourselves as privileged user
   config = {
     enabled_plugins = {
-      "9gag",
-      "eur",
-      "echo",
-      "btc",
-      "get",
-      "giphy",
-      "google",
-      "gps",
-      "help",
-      "id",
-      "images",
-      "img_google",
-      "location",
-      "media",
-      "plugins",
-      "channels",
-      "set",
-      "stats",
-      "time",
-      "version",
-      "weather",
-      "xkcd",
-      "youtube" },
-    sudo_users = {our_id},
-    disabled_channels = {}
+    "onservice",
+    "inrealm",
+    "ingroup",
+    "inpm",
+    "banhammer",
+    "stats",
+    "anti_spam",
+    "owners",
+    "arabic_lock",
+    "set",
+    "get",
+    "broadcast",
+    "download_media",
+    "invite",
+    "all",
+    "leave_ban"
+    },
+    sudo_users = {109618284},--Sudo users
+    disabled_channels = {},
+    moderation = {data = 'data/moderation.json'},
+    about_text = [[Teleseed v2 - Open Source
+An advance Administration bot based on yagop/telegram-bot 
+https://github.com/sepehrpk/firebot
+Admins
+@iran_mask
+Special thanks to
+awkward_potato
+Siyanew
+topkecleon
+Vamptacus
+    help_text_realm = [[
+Realm Commands:
+!creategroup [Name]
+Create a group
+!createrealm [Name]
+Create a realm
+!setname [Name]
+Set realm name
+!setabout [GroupID] [Text]
+Set a group's about text
+!setrules [GroupID] [Text]
+Set a group's rules
+!lock [GroupID] [setting]
+Lock a group's setting
+!unlock [GroupID] [setting]
+Unock a group's setting
+!wholist
+Get a list of members in group/realm
+!who
+Get a file of members in group/realm
+!type
+Get group type
+!kill chat [GroupID]
+Kick all memebers and delete group
+!kill realm [RealmID]
+Kick all members and delete realm
+!addadmin [id|username]
+Promote an admin by id OR username *Sudo only
+!removeadmin [id|username]
+Demote an admin by id OR username *Sudo only
+!list groups
+Get a list of all groups
+!list realms
+Get a list of all realms
+!log
+Grt a logfile of current group or realm
+!broadcast [text]
+!broadcast Hello !
+Send text to all groups
+Only sudo users can run this command
+!br [group_id] [text]
+!br 123456789 Hello !
+This command will send text to [group_id]
+**U can use both "/" and "!" 
+*Only admins and sudo can add bots in group
+*Only admins and sudo can use kick,ban,unban,newlink,setphoto,setname,lock,unlock,set rules,set about and settings commands
+*Only admins and sudo can use res, setowner, commands
+]],
+    help_text = [[
+Commands list :
+!kick [username|id]
+You can also do it by reply
+!ban [ username|id]
+You can also do it by reply
+!unban [id]
+You can also do it by reply
+!who
+Members list
+!modlist
+Moderators list
+!promote [username]
+Promote someone
+!demote [username]
+Demote someone
+!kickme
+Will kick user
+!about
+Group description
+!setphoto
+Set and locks group photo
+!setname [name]
+Set group name
+!rules
+Group rules
+!id
+return group id or user id
+!help
+!lock [member|name|bots|leave]	
+Locks [member|name|bots|leaveing] 
+!unlock [member|name|bots|leave]
+Unlocks [member|name|bots|leaving]
+!set rules <text>
+Set <text> as rules
+!set about <text>
+Set <text> as about
+!settings
+Returns group settings
+!newlink
+create/revoke your group link
+!link
+returns group link
+!owner
+returns group owner id
+!setowner [id]
+Will set id as owner
+!setflood [value]
+Set [value] as flood sensitivity
+!stats
+Simple message statistics
+!save [value] <text>
+Save <text> as [value]
+!get [value]
+Returns text of [value]
+!clean [modlist|rules|about]
+Will clear [modlist|rules|about] and set it to nil
+!res [username]
+returns user id
+"!res @username"
+!log
+will return group logs
+!banlist
+will return group ban list
+**U can use both "/" and "!" 
+*Only owner and mods can add bots in group
+*Only moderators and owner can use kick,ban,unban,newlink,link,setphoto,setname,lock,unlock,set rules,set about and settings commands
+*Only owner can use res,setowner,promote,demote and log commands
+]]
   }
   serialize_to_file(config, './data/config.lua')
-  print ('saved config into ./data/config.lua')
+  print('saved config into ./data/config.lua')
 end
 
 function on_our_id (id)
@@ -244,7 +365,7 @@ function on_user_update (user, what)
 end
 
 function on_chat_update (chat, what)
-  --vardump (chat)
+
 end
 
 function on_secret_chat_update (schat, what)
@@ -272,6 +393,31 @@ function load_plugins()
   end
 end
 
+
+-- custom add
+function load_data(filename)
+
+	local f = io.open(filename)
+	if not f then
+		return {}
+	end
+	local s = f:read('*all')
+	f:close()
+	local data = JSON.decode(s)
+
+	return data
+
+end
+
+function save_data(filename, data)
+
+	local s = JSON.encode(data)
+	local f = io.open(filename, 'w')
+	f:write(s)
+	f:close()
+
+end
+
 -- Call and postpone execution for cron plugins
 function cron_plugins()
 
@@ -282,8 +428,8 @@ function cron_plugins()
     end
   end
 
-  -- Called again in 5 mins
-  postpone (cron_plugins, false, 5*60.0)
+  -- Called again in 2 mins
+  postpone (cron_plugins, false, 120)
 end
 
 -- Start and load values
